@@ -1,0 +1,45 @@
+# Render Blueprint Configuration (one-click deployment)
+services:
+  # 1. Python Face Engine Microservice
+  - type: web
+    name: face-auth-python-service
+    env: docker
+    dockerfilePath: python-service/Dockerfile
+    dockerContext: python-service
+    plan: starter # Starter tier (or higher) is recommended because PyTorch is memory-intensive
+    restartPolicy: on-failure
+
+  # 2. Node.js Express Backend
+  - type: web
+    name: face-auth-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: starter
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://karanjadhav4065_db_user:Rns52u1RJJFcYVlm@cluster0.qvg3uwh.mongodb.net/User?appName=Cluster0
+      - key: JWT_SECRET
+        generateValue: true # Generates a secure random JWT secret automatically
+      - key: PYTHON_SERVICE_URL
+        fromService:
+          name: face-auth-python-service
+          type: web
+          property: host
+      - key: FRONTEND_URL
+        value: http://localhost:3000 # Update this to your deployed frontend URL after deploy
+
+  # 3. React Frontend Nginx Container
+  - type: web
+    name: face-auth-frontend
+    env: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: frontend
+    plan: starter
+    envVars:
+      - key: VITE_API_URL
+        value: http://localhost:5000/api # Update this to your deployed backend URL + '/api' (e.g., https://face-auth-backend.onrender.com/api)
