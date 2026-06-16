@@ -14,7 +14,7 @@ services:
     build: ./python-service
     container_name: face-auth-python-service
     ports:
-      - "5001:5001"
+      - "5001:7860"
     restart: unless-stopped
 
   backend:
