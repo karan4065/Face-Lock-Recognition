@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: face-auth-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  python-service:
+    build: ./python-service
+    container_name: face-auth-python-service
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: face-auth-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/face_auth
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_123456}
+      - PYTHON_SERVICE_URL=http://python-service:5001
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      - mongo
+      - python-service
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+    container_name: face-auth-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
